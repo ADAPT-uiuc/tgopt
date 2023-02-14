@@ -250,9 +250,11 @@ class TGAN(torch.nn.Module):
             src_ngh_node_batch_th = torch.from_numpy(src_ngh_node_batch).long().to(self.device)
             src_ngh_eidx_batch = torch.from_numpy(src_ngh_eidx_batch).long().to(self.device)
 
+            #torch.cuda.synchronize()
             t_start = time.perf_counter()
             src_ngh_t_batch_delta = cut_time_l[:, np.newaxis] - src_ngh_t_batch
             src_ngh_t_batch_th = torch.from_numpy(src_ngh_t_batch_delta).float().to(self.device)
+            #torch.cuda.synchronize()
             self._opt._t_time_encode_nghs += (time.perf_counter() - t_start)
 
             # get previous layer's node features
@@ -265,14 +267,17 @@ class TGAN(torch.nn.Module):
             src_ngh_feat = src_ngh_node_conv_feat.view(batch_size, n_ngh, -1)
 
             # get edge time features and node features
+            #torch.cuda.synchronize()
             t_start = time.perf_counter()
             cut_time_l_th = torch.from_numpy(cut_time_l).float().to(self.device)
             cut_time_l_th = torch.unsqueeze(cut_time_l_th, dim=1)
             src_node_t_embed = self.time_encoder(torch.zeros_like(cut_time_l_th))
+            #torch.cuda.synchronize()
             self._opt._t_time_encode_zero += (time.perf_counter() - t_start)
 
             t_start = time.perf_counter()
             src_ngh_t_embed = self.time_encoder(src_ngh_t_batch_th)
+            #torch.cuda.synchronize()
             self._opt._t_time_encode_nghs += (time.perf_counter() - t_start)
 
             src_ngh_edge_feat = self.edge_raw_embed(src_ngh_eidx_batch)
@@ -281,6 +286,7 @@ class TGAN(torch.nn.Module):
             mask = src_ngh_node_batch_th == 0
             attn_m = self.attn_model_list[curr_layers - 1]
 
+            #torch.cuda.synchronize()
             t_start = time.perf_counter()
             local = attn_m(src_node_conv_feat,
                                    src_node_t_embed,
@@ -288,6 +294,7 @@ class TGAN(torch.nn.Module):
                                    src_ngh_t_embed,
                                    src_ngh_edge_feat,
                                    mask)
+            #torch.cuda.synchronize()
             self._opt._t_attn += (time.perf_counter() - t_start)
 
             return local
@@ -347,10 +354,12 @@ class TGAN(torch.nn.Module):
 
             ### Compute attention aggregation for filtered inputs
 
+            #torch.cuda.synchronize()
             t_start = time.perf_counter()
             ts_l = ts_l.reshape(-1, 1)
             ngh_ts_delta = ts_l - ngh_ts_batch
             ngh_ts_delta = torch.from_numpy(ngh_ts_delta).float().to(self.device)
+            #torch.cuda.synchronize()
             self._opt._t_time_encode_nghs += (time.perf_counter() - t_start)
 
             if self._opt.enabled_time:
@@ -361,10 +370,12 @@ class TGAN(torch.nn.Module):
                 t_start = time.perf_counter()
                 ts_l = torch.from_numpy(ts_l).float().to(self.device)
                 src_t_embed = self.time_encoder(torch.zeros_like(ts_l))
+                #torch.cuda.synchronize()
                 self._opt._t_time_encode_zero += (time.perf_counter() - t_start)
 
                 t_start = time.perf_counter()
                 ngh_t_embed = self.time_encoder(ngh_ts_delta)
+                #torch.cuda.synchronize()
                 self._opt._t_time_encode_nghs += (time.perf_counter() - t_start)
 
             ngh_eidx_batch = torch.from_numpy(ngh_eidx_batch).long().to(self.device)
@@ -381,10 +392,12 @@ class TGAN(torch.nn.Module):
             del ngh_ts_batch
             del ngh_ts_delta
 
+            #torch.cuda.synchronize()
             t_start = time.perf_counter()
             local_embed = attn_m(src_embed, src_t_embed,
                                     ngh_embed, ngh_t_embed,
                                     ngh_edge_feat, mask)
+            #torch.cuda.synchronize()
             self._opt._t_attn += (time.perf_counter() - t_start)
 
             if self._opt.cache_enabled_at(layer):

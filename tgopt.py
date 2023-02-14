@@ -48,27 +48,33 @@ class TGOpt(object):
     ### Deduplication
 
     def dedup_filter(self, src_l: np.ndarray, ts_l: np.ndarray):
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
         src_l, ts_l, inv_idx = tgopt_ext.dedup_src_ts(src_l, ts_l)
         self._t_dedup_filter += (time.perf_counter() - t_start)
         return src_l, ts_l, inv_idx
 
     def dedup_invert(self, embed: Tensor, inv_idx: np.ndarray):
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
         embed = embed[inv_idx]
+        #torch.cuda.synchronize()
         self._t_dedup_invert += (time.perf_counter() - t_start)
         return embed
 
     ### Time-encoding precomputation
 
     def get_time_zero_embed(self, num_delta: int) -> Tensor:
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
         output = self._time_embeds[0].repeat(num_delta, 1)
         output = output.view(-1, 1, self._time_dim)
+        #torch.cuda.synchronize()
         self._t_time_encode_zero += (time.perf_counter() - t_start)
         return output
 
     def compute_time_embed(self, ts_delta: Tensor, encoder):
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
         batch_size = ts_delta.shape[0]
 
@@ -86,6 +92,7 @@ class TGOpt(object):
         out_embeds = out_embeds[inv_idx]
         out_embeds = out_embeds.view(batch_size, -1, self._time_dim)
 
+        #torch.cuda.synchronize()
         self._t_time_encode_nghs += (time.perf_counter() - t_start)
         return out_embeds
 
@@ -96,22 +103,27 @@ class TGOpt(object):
         return self.enabled and self.enabled_cache and layer < self._n_layers
 
     def compute_keys(self, src_l: np.ndarray, ts_l: np.ndarray):
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
         keys = tgopt_ext.compute_keys(src_l, ts_l)
         self._t_cache_keys += (time.perf_counter() - t_start)
         return keys
 
     def cache_lookup(self, layer: int, keys: np.ndarray):
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
         table = self._cache[layer - 1]
         hit_idx, embeds = table.lookup(keys, self._feat_dim, self.device)
+        #torch.cuda.synchronize()
         self._t_cache_lookup += (time.perf_counter() - t_start)
         return hit_idx, embeds
 
     def cache_store(self, layer: int, keys: np.ndarray, embeds: Tensor):
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
         table = self._cache[layer - 1]
         table.store(keys, embeds)
+        #torch.cuda.synchronize()
         self._t_cache_store += (time.perf_counter() - t_start)
 
     def cache_sizes(self):
@@ -164,6 +176,7 @@ class NeighborFinder:
     def ngh_lookup(self, src_l: np.ndarray, ts_l: np.ndarray, n_ngh=20):
         assert (len(src_l) == len(ts_l))
 
+        #torch.cuda.synchronize()
         t_start = time.perf_counter()
 
         nghs_l, eidx_l, time_l = [], [], []

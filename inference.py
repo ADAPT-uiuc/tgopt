@@ -12,6 +12,10 @@ from module import TGAN
 from tgopt import TGOpt, NeighborFinder
 
 
+# NOTE: for more accurate stats/timings when running with GPU, uncomment the
+# `synchronize()` calls in `inference.py`, `module.py`, and `tgopt.py`.
+
+
 ### Argument and global variables
 parser = argparse.ArgumentParser(Path(__file__).name)
 parser.add_argument('-d', '--data', type=str, required=True, help='dataset to use (e.g. snap-msg or jodie-wiki)')
@@ -160,8 +164,10 @@ for r in range(args.runs):
             opt.prep_next_batch()
 
         with torch.no_grad():
+            #torch.cuda.synchronize()
             t_start = time.perf_counter()
             embed = model.tem_conv(node_l_cut, time_l_cut, NUM_LAYER, n_ngh=NUM_NEIGHBORS)
+            #torch.cuda.synchronize()
             t_total += (time.perf_counter() - t_start)
 
         if args.save_embeds:
