@@ -3,7 +3,7 @@
 This repository is the artifact for our TGOpt paper (PPoPP 2023). For the
 archived artifact, see our Zenodo record.
 
-[[Zenodo][zen]]
+[[Paper][pdf], [Zenodo][zen]]
 
 ## Requirements
 
@@ -52,6 +52,7 @@ $ python inference.py -d snap-msg --model tgat --prefix test --opt-all [--gpu 0]
 ```
 
 Use the `-h` flag to see all available options. To reproduce our experiments,
-see Appendix A in our paper.
+see Appendix A in our [paper][pdf].
 
 [zen]: https://zenodo.org/record/7328505
+[pdf]: https://charithmendis.com/pdfs/ppopp-tgopt.pdf
