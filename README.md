@@ -72,4 +72,4 @@ You can cite our paper with the following:
 ```
 
 [zen]: https://zenodo.org/record/7328505
-[pdf]: https://charithmendis.com/pdfs/ppopp-tgopt.pdf
+[pdf]: https://dl.acm.org/doi/abs/10.1145/3572848.3577490
